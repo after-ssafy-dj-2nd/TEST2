@@ -20,9 +20,6 @@ export default function App($target) {
     return fetchData;
   }
 
-  const searchBar = SearchBar($keyword, $keywords, onSearchKeyword);
-  const result = Result($searchResults, $keyword, onSearchCatImage);
-
-  searchBar;
-  result;
+  SearchBar($keyword, $keywords, onSearchKeyword);
+  Result($searchResults, $keyword, onSearchCatImage);
 }
