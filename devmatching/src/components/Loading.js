@@ -1,4 +1,4 @@
-import { setStyleDisplay } from '../util/setStyleDisplay.js';
+import DOM from '../util/DOM.js';
 
 export default {
   showLoadingOverlay($target) {
@@ -20,7 +20,7 @@ export default {
   },
   
   showLoadingMessage($target) {
-    setStyleDisplay($target, 'block');
+    DOM.setDisplay($target, 'block');
     $target.innerHTML = `<p class="loading-recommend-keywords">추천 검색어를 불러오는 중입니다.</p>`;
   }
 }

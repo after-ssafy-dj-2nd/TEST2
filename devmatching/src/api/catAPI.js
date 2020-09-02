@@ -1,15 +1,10 @@
 // 공통 API ENDPOINT 부분
 const API_ENDPOINT = 'https://jf3iw5iguk.execute-api.ap-northeast-2.amazonaws.com/dev/api/cats';
 
-// 기존 ajax 요청 취소
-const requestController = new AbortController();
-const signal = requestController.signal;
-const abortFetch = () => requestController.abort();
-
 // API 요청
 const request = async url => {
   try {
-    const response = await fetch(url, { signal });
+    const response = await fetch(url);
     if (response.ok) {
       const data = await response.json();
       return data;

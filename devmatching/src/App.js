@@ -20,6 +20,6 @@ export default function App($target) {
     return fetchData;
   }
 
-  SearchBar($keyword, $keywords, onSearchKeyword);
+  SearchBar($target, $keyword, $keywords, onSearchKeyword);
   Result($searchResults, $keyword, onSearchCatImage);
 }
