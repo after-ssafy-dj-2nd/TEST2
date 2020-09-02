@@ -1,6 +1,6 @@
 import { getQueryParams } from '../util/getQueryParams.js';
 import { setItem } from '../util/sessionStorage.js';
-import DOM from '../util/DOM.js';
+import { DOM } from '../util/DOM.js';
 import Error from './Error.js';
 
 // Result 컴포넌트에서 사용되는 상태값 모음

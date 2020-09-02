@@ -1,4 +1,4 @@
-import DOM from '../util/DOM.js';
+import { DOM } from '../util/DOM.js';
 
 export default {
   showLoadingOverlay($target) {

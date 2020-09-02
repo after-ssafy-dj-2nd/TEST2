@@ -1,6 +1,6 @@
 import { Debounce } from '../util/Debounce.js';
 import { getItem, setItem } from '../util/sessionStorage.js';
-import DOM from '../util/DOM.js';
+import { DOM } from '../util/DOM.js';
 import Error from './Error.js';
 
 // SearchBar 컴포넌트에서 사용되는 상태값 모음
@@ -57,9 +57,9 @@ export default function SearchBar(app, inputKeyword, keywords, onSearch) {
     };
 
     // 위(0) 또는 아래(1) 화살표 누른 경우 추천 검색어 하이라이트 표시
-    // 추천 검색어 리스트가 보여야 하고 추천 검색어 결과가 있을 때만 동작
+    // 추천 검색어 리스트가 보여야 하고 추천 검색어 결과가 있으며 에러가 일어나지 않은 경우 동작
     if (ArrowKeyIndex === 0 || ArrowKeyIndex === 1) {
-      Keywords.style.display === 'block' && Data.length ? moveFocusKeywords() : null;
+      Keywords.style.display === 'block' && Data.length && !IsError ? moveFocusKeywords() : null;
       return
     }
 
@@ -110,25 +110,28 @@ function showRecommendKeywords() {
 // 화살표로 이동하면서 추천 검색어 하이라이트 표시
 function moveFocusKeywords() {
   const activeKeyword = Keywords.querySelector('.active');
-
-  // 맨 처음 아무것도 하이라이트가 되어 있지 않을 때 첫 번째 항목에 하이라이트 표시
-  if (activeKeyword === null) {
-    DOM.addClass(Keywords.querySelector('li'), 'active');
-    InputKeyword.value = Keywords.querySelector('li').innerText
-    return
-  }
   
   // 아래 화살표 눌렀을 때(마지막 항목에 하이라이트 표시된 경우 무시)
-  if (ArrowKeyIndex === 1 && activeKeyword.nextSibling) {
-    DOM.addClass(activeKeyword.nextSibling, 'active');
-    DOM.removeClass(activeKeyword, 'active');
-    return
+  if (ArrowKeyIndex === 1) {
+    if (activeKeyword === null) { // 추천 검색어에 하이라이트 표시가 아무 것도 없는 경우 첫 번째 키워드에 하이라이트 표시
+      const firstKeyword = Keywords.querySelector('li');
+      DOM.addClass(firstKeyword, 'active');
+      InputKeyword.value = firstKeyword.innerText;
+      return
+    }
+    if (activeKeyword.nextSibling) {
+      DOM.addClass(activeKeyword.nextSibling, 'active');
+      DOM.removeClass(activeKeyword, 'active');
+      InputKeyword.value = activeKeyword.nextSibling.innerText;
+      return
+    }
   }
 
   // 위 화살표 눌렀을 때(첫 번째 항목에 하이라이트 표시된 경우 무시)
   if (ArrowKeyIndex === 0 && activeKeyword.previousSibling) {
     DOM.addClass(activeKeyword.previousSibling, 'active');
     DOM.removeClass(activeKeyword, 'active');
+    InputKeyword.value = activeKeyword.previousSibling.innerText;
   }
 }
 

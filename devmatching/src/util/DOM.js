@@ -1,4 +1,4 @@
-const DOM = {
+export const DOM = {
   addClass: (target, className) => {
     target.classList.add(className);
   },
@@ -12,5 +12,3 @@ const DOM = {
     window.open(url, '_self');
   }
 }
-
-export default DOM;
