@@ -1,89 +1,83 @@
-import { setStyleDisplay } from '../util/setStyleDisplay.js';
-import { toggleActiveKeyword } from '../util/toggleActiveKeyword.js';
 import { Debounce } from '../util/Debounce.js';
 import { getItem, setItem } from '../util/sessionStorage.js';
-import { movePage } from '../util/movePage.js';
+import { DOM } from '../util/DOM.js';
 import Error from './Error.js';
 
 // SearchBar 컴포넌트에서 사용되는 상태값 모음
-let $inputKeyword;
-let $keywords;
-let $onSearch;
-let $isError;
-let $data;
-let $key;
-let $arrowKeyIndex;
-let $errorData;
+let App;
+let InputKeyword;
+let Keywords;
+let OnSearch;
+let IsError;
+let Data;
+let Key;
+let ArrowKeyIndex;
+let ErrorData;
 
 // 방향키 key 이름
 const arrowKeys = ['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'];
 
-export default function SearchBar(inputKeyword, keywords, onSearch) {
-  $inputKeyword = inputKeyword;
-  $keywords = keywords;
-  $onSearch = onSearch;
+export default function SearchBar(app, inputKeyword, keywords, onSearch) {
+  App = app;
+  InputKeyword = inputKeyword;
+  Keywords = keywords;
+  OnSearch = onSearch;
 
-  // 마우스로 다른 곳을 클릭하여 input이 focus를 잃어버리는 경우 추천 검색어 창 닫기
-  $inputKeyword.addEventListener('blur', () => {
-    // setTimeout으로 지연 시간을 100ms 설정해서 추천 검색어를 클릭했는지 우선 판별 후
-    // 다른 부분을 클릭해서 focus가 잃었다고 판단되면 그 때 추천 검색어 창 닫기
-    setTimeout(() => setStyleDisplay($keywords, 'none'), 100);
-  });
-
-  // 추천 검색어 키워드 클릭 시 검색 결과 페이지로 이동(Event Delegation)
-  $keywords.addEventListener('click', e => {
-    const path = e.path;
-    const recommendKeyword = path.find(elem => elem.tagName === 'LI');
-
-    if (recommendKeyword) {
-      movePage(`?q=${recommendKeyword.innerText}`);
+  // 화면 클릭시 클릭한 부분의 태그 이름에 따라 실행되는 동작 분기
+  App.addEventListener('click', e => {
+    const clickedTagName = e.target.tagName;
+    if (clickedTagName === 'LI') { // 추천 검색어 항목을 클릭한 경우
+      DOM.movePage(`?q=${e.target.innerText}`);
       return
     }
+    DOM.setDisplay(Keywords, 'none'); // 나머지 경우 추천 검색어 리스트 안 보이게 하기
   })
   
   // 검색창에 키보드의 입력이 들어갔을 때
-  $inputKeyword.addEventListener('keyup', Debounce(async e => {
+  InputKeyword.addEventListener('keyup', Debounce(async e => {
     const { value } = e.target;
     const { key } = e;
-    $key = key;
-    $arrowKeyIndex = arrowKeys.indexOf($key);
+    Key = key;
+    ArrowKeyIndex = arrowKeys.indexOf(Key);
 
     // 왼쪽(2), 오른쪽(3) 화살표를 누른 경우 무시
-    if ($arrowKeyIndex >= 2) {
+    if (ArrowKeyIndex >= 2) {
       return
     }
 
     // Enter 키를 누른 경우 검색 결과 보여주기
-    if ($key === 'Enter') {
-      movePage(`?q=${value}`);
+    if (Key === 'Enter') {
+      DOM.movePage(`?q=${value}`);
     }
 
     // Esc 키를 누른 경우 추천 검색어 창 안 보이게 닫기
-    if ($key === 'Escape') {
-      setStyleDisplay($keywords, 'none');
+    if (Key === 'Escape') {
+      DOM.setDisplay(Keywords, 'none')
       return
     };
 
     // 위(0) 또는 아래(1) 화살표 누른 경우 추천 검색어 하이라이트 표시
-    // 추천 검색어 리스트가 보여야 하고 추천 검색어 결과가 있을 때만 동작
-    if ($arrowKeyIndex === 0 || $arrowKeyIndex === 1) {
-      $keywords.style.display === 'block' && $data.length ? moveFocusKeywords() : null;
+    // 추천 검색어 리스트가 보여야 하고 추천 검색어 결과가 있으며 에러가 일어나지 않은 경우 동작
+    if (ArrowKeyIndex === 0 || ArrowKeyIndex === 1) {
+      Keywords.style.display === 'block' && Data.length && !IsError ? moveFocusKeywords() : null;
       return
     }
 
     // 키보드의 입력 이벤트가 들어올 때
-    // 이전의 keyword 값(getItem('beforeKeyword'))과 현재 keyword 값($inputKeyword.value)을 비교해서
+    // 이전의 keyword 값(getItem('beforeKeyword'))과 현재 keyword 값(InputKeyword.value)을 비교해서
     // 다른 경우에만 추천 검색어 결과 값 가져오기
-    if(getItem('beforeKeyword') === $inputKeyword.value) return;
-    setItem('beforeKeyword', $inputKeyword.value);
+    if (getItem('beforeKeyword') === InputKeyword.value) {
+      return
+    }
+    setItem('beforeKeyword', InputKeyword.value);
 
     // 추천 검색어 결과 값 가져오기
-    const result = await $onSearch(value);
-    $isError = result.isError;
-    if ($isError) {
-      $errorData = result.data;
+    const result = await OnSearch(value);
+    IsError = result.isError;
+    if (IsError) {
+      ErrorData = result.data;
     } else {
-      $data = result.data;
+      Data = result.data;
     }
     
     render();
@@ -92,58 +86,56 @@ export default function SearchBar(inputKeyword, keywords, onSearch) {
 
 // 추천 검색어 리스트 보여주기
 function showRecommendKeywords() {
-  $keywords.innerHTML = '';
+  Keywords.innerHTML = '';
 
   // 에러 발생시
-  if ($isError) {
-    Error($keywords, $errorData);
+  if (IsError) {
+    Error(Keywords, ErrorData);
     return
   }
 
   // 추천 검색어가 없을 때
-  if (!$data.length) {
-    $keywords.innerHTML = `<p class="error-alert no-result-alert">추천 검색어가 없습니다.</p>`;
+  if (!Data.length) {
+    Keywords.innerHTML = `<p class="error-alert no-result-alert">추천 검색어가 없습니다.</p>`;
     return
   }
 
   // 추천 검색어 보여주기
   const keywordList = document.createElement('ul');
-  keywordList.innerHTML = $data.map(data => `<li>${data}</li>`).join('');
+  keywordList.innerHTML = Data.map(data => `<li>${data}</li>`).join('');
 
-  $keywords.appendChild(keywordList);
+  Keywords.appendChild(keywordList);
 }
 
-// 화살표로 이동시 추천 검색어 focus 이동
+// 화살표로 이동하면서 추천 검색어 하이라이트 표시
 function moveFocusKeywords() {
-  const recommendKeywords = $keywords.querySelectorAll('li');
-  const activeKeywordIndex = Array.from(recommendKeywords)
-    .findIndex(keyword => Array.from(keyword.classList).includes('active'));
+  const activeKeyword = Keywords.querySelector('.active');
   
-  // 맨 처음 아무것도 하이라이트가 되어 있지 않을 때 첫 번째 항목에 하이라이트 표시
-  if (activeKeywordIndex === -1) {
-    toggleActiveKeyword(recommendKeywords, 0);
-    $inputKeyword.value = recommendKeywords[0].innerText;
-    return
+  // 아래 화살표 눌렀을 때(마지막 항목에 하이라이트 표시된 경우 무시)
+  if (ArrowKeyIndex === 1) {
+    if (activeKeyword === null) { // 추천 검색어에 하이라이트 표시가 아무 것도 없는 경우 첫 번째 키워드에 하이라이트 표시
+      const firstKeyword = Keywords.querySelector('li');
+      DOM.addClass(firstKeyword, 'active');
+      InputKeyword.value = firstKeyword.innerText;
+      return
+    }
+    if (activeKeyword.nextSibling) {
+      DOM.addClass(activeKeyword.nextSibling, 'active');
+      DOM.removeClass(activeKeyword, 'active');
+      InputKeyword.value = activeKeyword.nextSibling.innerText;
+      return
+    }
   }
 
-  // 아래 화살표 눌렀을 때
-  if ($arrowKeyIndex === 1) {
-    if (activeKeywordIndex === $data.length - 1) return; // 마지막 검색어에 하이라이트인 경우 무시
-    toggleActiveKeyword(recommendKeywords, activeKeywordIndex, 1);
-    $inputKeyword.value = recommendKeywords[activeKeywordIndex + 1].innerText;
-    return
-  }
-
-  // 위 화살표 눌렀을 때
-  if ($arrowKeyIndex === 0) {
-    if (activeKeywordIndex === 0) return; // 첫 번째 검색어에 하이라이트인 경우 무시
-    toggleActiveKeyword(recommendKeywords, activeKeywordIndex, -1);
-    $inputKeyword.value = recommendKeywords[activeKeywordIndex - 1].innerText;
-    return
+  // 위 화살표 눌렀을 때(첫 번째 항목에 하이라이트 표시된 경우 무시)
+  if (ArrowKeyIndex === 0 && activeKeyword.previousSibling) {
+    DOM.addClass(activeKeyword.previousSibling, 'active');
+    DOM.removeClass(activeKeyword, 'active');
+    InputKeyword.value = activeKeyword.previousSibling.innerText;
   }
 }
 
 function render() {
-  setStyleDisplay($keywords, 'block');
+  DOM.setDisplay(Keywords, 'block');
   showRecommendKeywords();
 }
